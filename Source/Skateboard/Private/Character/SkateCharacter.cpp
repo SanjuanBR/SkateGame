@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Actor/SkateboardActor.h"
 #include "Components/ObstacleComponent.h"
 #include "Components/Movement/SkateMovementComponent.h"
 #include "Data/ScoreDataAsset.h"
@@ -51,6 +52,11 @@ void ASkateCharacter::BeginPlay()
                 Subsystem->AddMappingContext(SkaterMappingContext, 0);
             }
         }
+    }
+
+    if (IsValid(SkateboardClass))
+    {
+        SpawnSkate();
     }
 }
 
@@ -157,6 +163,22 @@ void ASkateCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint
 
             GetWorld()->GetTimerManager().SetTimer(ScoreJumpCooldownHandle, ScoreCooldown, false);
         }
+    }
+}
+
+void ASkateCharacter::SpawnSkate()
+{
+    const FTransform SocketTransform = GetMesh()->GetSocketTransform(SkateboardSocketName);
+        
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = this; // O personagem será o "dono" do skate
+    SpawnParams.Instigator = GetInstigator();
+    
+    SkateboardInstance = GetWorld()->SpawnActor<ASkateboardActor>(SkateboardClass, SocketTransform, SpawnParams);
+
+    if (SkateboardInstance)
+    {
+        SkateboardInstance->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, SkateboardSocketName);
     }
 }
 

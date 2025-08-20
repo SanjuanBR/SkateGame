@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "SkateCharacter.generated.h"
 
+class ASkateboardActor;
 class UScoreDataAsset;
 class USkateMovementComponent;
 class UInputMappingContext;
@@ -60,6 +61,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Setup|Input", meta = (AllowPrivateAccess = "true"))
 	FVector JumpDetectionBoxHalfSize = FVector(30.f, 30.f, 60.f);
 
+	UPROPERTY(EditDefaultsOnly, Category = "Setup|Skate")
+	TSubclassOf<ASkateboardActor> SkateboardClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Skate")
+	FName SkateboardSocketName = "SkateSocket";
+
+	UPROPERTY()
+	ASkateboardActor* SkateboardInstance;
+
 	UPROPERTY()
 	USkateMovementComponent* SkaterMovementComponent;
 
@@ -79,6 +89,7 @@ private:
 
 	bool bIsPushingInput;
 	
+	
 	void MoveForward(const FInputActionValue& Value);
 	void StopPushing(const FInputActionValue& InputActionValue);
 	void Turn(const FInputActionValue& Value);
@@ -89,6 +100,7 @@ private:
 
 	void ScoreJump();
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
-	
+
+	void SpawnSkate();
 	
 };
