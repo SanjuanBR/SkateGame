@@ -15,44 +15,56 @@ public:
 	float GetAccelerationForce() const {return AccelerationForce;}
 	float GetTurnStrength() const {return TurnStrength;}
 	float GetBrakingForce() const {return BrakingForce;}
-
-	// Atualiza a cada frame
+	void DoChargedJump(float ChargeDuration);
+	
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	// Input externo (Character chama isso)
+	
 	void AddSkateInput( float Scale);
-
-	// Nova função para controlar o estado de frenagem
+	
 	void SetBraking(bool bNewBrakingState);
+
+protected:
+	virtual void BeginPlay() override;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
 	FVector SkateRotationRate = FVector(0,200,0);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
-	float AccelerationForce = 6000.0f;   // acelera forte, ganha velocidade rápido
+	float AccelerationForce = 6000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
-	float TurnStrength = 50.0f;         // sensibilidade de curva (pode ir até 300 pra arcade)
+	float TurnStrength = 50.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
-	float BrakingForce = 8000.0f;        // freia bem mais forte que acelera
+	float BrakingForce = 8000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
-	float MaxSkateSpeed = 6000.0f;       // velocidade máxima (bem rápida)
+	float MaxSkateSpeed = 6000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
-	float AccelerationSmoothness = 6.0f; // quanto mais alto, mais rápido responde ao input
+	float AccelerationSmoothness = 6.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
-	float DecelerationSmoothness = 70.f; // soltar input leva um tempinho pra parar
+	float DecelerationSmoothness = 70.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup", meta=(AllowPrivateAccess=true))
 	float SkateGroundFriction = 200.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup|Jump", meta=(AllowPrivateAccess=true))
+	float MinJumpForce = 400.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup|Jump", meta=(AllowPrivateAccess=true))
+	float MaxJumpForce = 1000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup|Jump", meta=(AllowPrivateAccess=true))
+	float MaxJumpChargeTime = 1.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setup|Jump", meta=(AllowPrivateAccess=true))
+	float SkateJumpZVelocity = 700.f;
 	
 	bool bIsBraking;
-
-	float CurrentSpeed;
+	
 	float ForwardInputScale;
 	
 };

@@ -53,10 +53,13 @@ private:
 	UInputAction* JumpAction;
 	
 	USkateMovementComponent* SkaterMovementComponent;
+
+	float JumpChargeStartTime;
 	
 	void MoveForward(const FInputActionValue& Value);
 	void Turn(const FInputActionValue& Value);
 	void StartBraking(const FInputActionValue& Value);
 	void StopBraking(const FInputActionValue& Value);
-	void RequestJump(const FInputActionValue& Value);
+	void StartJumpCharge(const FInputActionValue& Value);
+	void ReleaseJump(const FInputActionValue& Value);
 };

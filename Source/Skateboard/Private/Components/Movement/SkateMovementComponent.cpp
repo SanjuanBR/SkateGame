@@ -1,5 +1,7 @@
 ﻿#include "Components/Movement/SkateMovementComponent.h"
 
+#include "GameFramework/Character.h"
+
 USkateMovementComponent::USkateMovementComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -13,14 +15,17 @@ USkateMovementComponent::USkateMovementComponent()
 	bOrientRotationToMovement = false;
 	bUseControllerDesiredRotation = true;
 
+	AirControl = 0.2f;
+
+	GravityScale = 2.5f;
+
 	bIsBraking = false;
-	CurrentSpeed = 0.0f;
 	ForwardInputScale = 0.0f;
 }
 
 void USkateMovementComponent::AddSkateInput(float Scale)
 {
-	ForwardInputScale = Scale;
+	ForwardInputScale = FMath::Clamp(Scale, -1.0f, 1.0f);
 }
 
 void USkateMovementComponent::SetBraking(bool bNewBrakingState)
@@ -28,36 +33,49 @@ void USkateMovementComponent::SetBraking(bool bNewBrakingState)
 	bIsBraking = bNewBrakingState;
 }
 
+void USkateMovementComponent::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void USkateMovementComponent::DoChargedJump(float ChargeDuration)
+{
+	const float ChargeRatio = FMath::Clamp(ChargeDuration / MaxJumpChargeTime, 0.0f, 1.0f);
+	const float LaunchForce = FMath::Lerp(MinJumpForce, MaxJumpForce, ChargeRatio);
+	const FVector LaunchVelocityImpulse = FVector(0.0f, 0.0f, LaunchForce);
+        
+	CharacterOwner->LaunchCharacter(LaunchVelocityImpulse, false, true);
+}
+
 void USkateMovementComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!PawnOwner || !UpdatedComponent) return;
+	if (!PawnOwner || !UpdatedComponent || IsFalling()){return;}
 
-	if (ForwardInputScale > KINDA_SMALL_NUMBER)
+	const FVector SkateAcceleration = PawnOwner->GetActorForwardVector() * AccelerationForce * ForwardInputScale;
+
+	const FVector CurrentVelocity = Velocity;
+	const float DecelerationRate = bIsBraking ? BrakingForce : SkateGroundFriction;
+	const FVector Deceleration = -CurrentVelocity.GetSafeNormal() * DecelerationRate;
+	
+	if (ForwardInputScale <= KINDA_SMALL_NUMBER)
 	{
-		CurrentSpeed += AccelerationForce * ForwardInputScale * DeltaTime;
+		Velocity += Deceleration * DeltaTime;
 	}
 	else
 	{
-		const float DecelerationRate = bIsBraking ? BrakingForce : SkateGroundFriction;
-		CurrentSpeed -= DecelerationRate * DeltaTime;
+		Velocity += SkateAcceleration * DeltaTime;
 	}
 
-	CurrentSpeed = FMath::Clamp(CurrentSpeed, 0.0f, MaxSkateSpeed);
-
-	Velocity = PawnOwner->GetActorForwardVector() * CurrentSpeed;
-	
-	if (CurrentSpeed > 0.f)
+	if (Velocity.SizeSquared() > FMath::Square(MaxSkateSpeed))
 	{
-		FVector Delta = Velocity * DeltaTime;
-		FHitResult Hit;
-		SafeMoveUpdatedComponent(Delta, UpdatedComponent->GetComponentQuat(), true, Hit);
-		
-		if (Hit.IsValidBlockingHit())
-		{
-			SlideAlongSurface(Delta, 1.f - Hit.Time, Hit.Normal, Hit, true);
-		}
+		Velocity = Velocity.GetSafeNormal() * MaxSkateSpeed;
+	}
+	
+	if (FVector::DotProduct(Velocity, CurrentVelocity) < 0.f)
+	{
+		Velocity = FVector::ZeroVector;
 	}
 	
 	ForwardInputScale = 0.0f;

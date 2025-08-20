@@ -58,7 +58,9 @@ void ASkateCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
         EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &ASkateCharacter::Turn);
         EnhancedInputComponent->BindAction(BrakeAction, ETriggerEvent::Started, this, &ASkateCharacter::StartBraking);
         EnhancedInputComponent->BindAction(BrakeAction, ETriggerEvent::Completed, this, &ASkateCharacter::StopBraking);
-        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ASkateCharacter::RequestJump);
+        
+        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ASkateCharacter::StartJumpCharge);
+        EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ASkateCharacter::ReleaseJump);
     }
 }
 
@@ -102,7 +104,16 @@ void ASkateCharacter::StopBraking(const FInputActionValue& Value)
     }
 }
 
-void ASkateCharacter::RequestJump(const FInputActionValue& Value)
+void ASkateCharacter::StartJumpCharge(const FInputActionValue& Value)
 {
-    Jump();
+    JumpChargeStartTime = GetWorld()->GetTimeSeconds();
+}
+
+void ASkateCharacter::ReleaseJump(const FInputActionValue& Value)
+{
+    if (SkaterMovementComponent)
+    {
+        const float ChargeDuration = GetWorld()->GetTimeSeconds() - JumpChargeStartTime;
+        SkaterMovementComponent->DoChargedJump(ChargeDuration);
+    }
 }
