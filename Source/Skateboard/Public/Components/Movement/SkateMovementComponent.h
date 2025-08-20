@@ -15,6 +15,10 @@ public:
 	float GetAccelerationForce() const {return AccelerationForce;}
 	float GetTurnStrength() const {return TurnStrength;}
 	float GetBrakingForce() const {return BrakingForce;}
+	
+	UFUNCTION(BlueprintPure, Category="Movement")
+	float GetForwardInputScale() const { return ForwardInputScale; }
+	
 	void DoChargedJump(float ChargeDuration);
 	
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

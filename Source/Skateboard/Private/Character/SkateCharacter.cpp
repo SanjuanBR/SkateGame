@@ -11,7 +11,6 @@
 #include "Components/ObstacleComponent.h"
 #include "Components/Movement/SkateMovementComponent.h"
 #include "Data/ScoreDataAsset.h"
-#include "Debug/DebugHelper.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Player/SkatePlayerState.h"
 
@@ -23,15 +22,17 @@ ASkateCharacter::ASkateCharacter(const FObjectInitializer& ObjectInitializer)
     
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->bUsePawnControlRotation = true; // Rotaciona o braço baseado na rotação do controlador
-    CameraBoom->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f)); // Inclinação inicial
+    CameraBoom->bUsePawnControlRotation = true;
+    CameraBoom->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f));
     
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Anexa a câmera ao final do SpringArm
-    FollowCamera->bUsePawnControlRotation = false; // A câmera não rotaciona sozinha
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    FollowCamera->bUsePawnControlRotation = false;
     
     CameraBoom->bEnableCameraLag = true;
     CameraBoom->CameraLagSpeed = 5.0f;
+
+    bIsPushingInput = false;
 
     SkaterMovementComponent = Cast<USkateMovementComponent>(GetCharacterMovement());
     ensureMsgf(SkaterMovementComponent, TEXT("Failed to get SkaterMovement for %s. Check default subobject class."), *GetName());
@@ -60,6 +61,8 @@ void ASkateCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
     if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
     {
         EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &ASkateCharacter::MoveForward);
+        EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Completed, this, &ASkateCharacter::StopPushing);
+        
         EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &ASkateCharacter::Turn);
         EnhancedInputComponent->BindAction(BrakeAction, ETriggerEvent::Started, this, &ASkateCharacter::StartBraking);
         EnhancedInputComponent->BindAction(BrakeAction, ETriggerEvent::Completed, this, &ASkateCharacter::StopBraking);
@@ -72,12 +75,23 @@ void ASkateCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 void ASkateCharacter::MoveForward(const FInputActionValue& Value)
 {
     const float AxisValue = Value.Get<float>();
+    bIsPushingInput = (AxisValue > 0.f);
+    
     if (Controller != nullptr && AxisValue != 0.0f)
     {
         if (SkaterMovementComponent)
         {
             SkaterMovementComponent->AddSkateInput(AxisValue);
         }
+    }
+}
+
+void ASkateCharacter::StopPushing(const FInputActionValue& InputActionValue)
+{
+    bIsPushingInput = false;
+    if (SkaterMovementComponent)
+    {
+        SkaterMovementComponent->AddSkateInput(0.0f);
     }
 }
 
@@ -136,8 +150,13 @@ void ASkateCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint
     
     if (PrevMovementMode == MOVE_Falling && GetCharacterMovement()->IsMovingOnGround())
     {
-        ScoreJump();
-        ScoredObstaclesInCombo.Empty();
+        if (!GetWorld()->GetTimerManager().IsTimerActive(ScoreJumpCooldownHandle))
+        {
+            ScoreJump();
+            ScoredObstaclesInCombo.Empty();
+
+            GetWorld()->GetTimerManager().SetTimer(ScoreJumpCooldownHandle, ScoreCooldown, false);
+        }
     }
 }
 
@@ -161,8 +180,7 @@ void ASkateCharacter::ScoreJump()
     ActorsToIgnore.Add(this);
 
     TArray<FHitResult> HitResults;
-
-    // Executa o Box Trace do início ao fim do pulo
+    
     UKismetSystemLibrary::BoxTraceMultiForObjects(
         GetWorld(),
         JumpStartLocation,

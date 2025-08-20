@@ -22,10 +22,14 @@ class SKATEBOARD_API ASkateCharacter : public ACharacter
 
 public:
 	ASkateCharacter(const FObjectInitializer& ObjectInitializer);
+	
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UFUNCTION(BlueprintPure, Category="SkateCharacter")
+	bool IsPushingInput() const { return bIsPushingInput; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -67,8 +71,16 @@ private:
 
 	float JumpChargeStartTime;
 	FVector JumpStartLocation;
+
+	UPROPERTY(EditAnywhere, Category = "Setup|Score", meta = (AllowPrivateAccess = "true"))
+	float ScoreCooldown = 1.f;
+	
+	FTimerHandle ScoreJumpCooldownHandle;
+
+	bool bIsPushingInput;
 	
 	void MoveForward(const FInputActionValue& Value);
+	void StopPushing(const FInputActionValue& InputActionValue);
 	void Turn(const FInputActionValue& Value);
 	void StartBraking(const FInputActionValue& Value);
 	void StopBraking(const FInputActionValue& Value);
