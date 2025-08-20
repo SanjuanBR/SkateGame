@@ -29,8 +29,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	
-
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -39,7 +37,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 	
-	// Assets de Enhanced Input
 	UPROPERTY(EditAnywhere, Category = "Setup|Input")
 	UInputMappingContext* SkaterMappingContext;
 
@@ -56,8 +53,7 @@ private:
 	UInputAction* JumpAction;
 	
 	USkateMovementComponent* SkaterMovementComponent;
-
-	// Funções de Input
+	
 	void MoveForward(const FInputActionValue& Value);
 	void Turn(const FInputActionValue& Value);
 	void StartBraking(const FInputActionValue& Value);

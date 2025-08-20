@@ -16,18 +16,15 @@ ASkateCharacter::ASkateCharacter(const FObjectInitializer& ObjectInitializer)
 {
     PrimaryActorTick.bCanEverTick = true;
     
-    // Cria o SpringArm
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
     CameraBoom->bUsePawnControlRotation = true; // Rotaciona o braço baseado na rotação do controlador
     CameraBoom->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f)); // Inclinação inicial
-
-    // Cria a Câmera
+    
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Anexa a câmera ao final do SpringArm
     FollowCamera->bUsePawnControlRotation = false; // A câmera não rotaciona sozinha
-
-    // Configurações do SpringArm para lag
+    
     CameraBoom->bEnableCameraLag = true;
     CameraBoom->CameraLagSpeed = 5.0f;
 
@@ -38,8 +35,7 @@ ASkateCharacter::ASkateCharacter(const FObjectInitializer& ObjectInitializer)
 void ASkateCharacter::BeginPlay()
 {
     Super::BeginPlay();
-
-    // Setup enhanced input
+    
     if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -73,8 +69,7 @@ void ASkateCharacter::MoveForward(const FInputActionValue& Value)
     {
         if (SkaterMovementComponent)
         {
-            const FVector ForwardDirection = GetActorForwardVector();
-            SkaterMovementComponent->AddInputVector(ForwardDirection * AxisValue * SkaterMovementComponent->GetAccelerationForce());
+            SkaterMovementComponent->AddSkateInput(AxisValue);
         }
     }
 }
@@ -95,8 +90,7 @@ void ASkateCharacter::StartBraking(const FInputActionValue& Value)
 {
     if (SkaterMovementComponent)
     {
-        SkaterMovementComponent->BrakingFrictionFactor = 2.0f; // Aumenta o atrito ao frear
-        SkaterMovementComponent->MaxAcceleration = SkaterMovementComponent->GetBrakingForce();
+        SkaterMovementComponent->SetBraking(true);
     }
 }
 
@@ -104,8 +98,7 @@ void ASkateCharacter::StopBraking(const FInputActionValue& Value)
 {
     if (SkaterMovementComponent)
     {
-        SkaterMovementComponent->BrakingFrictionFactor = 0.0f;
-        SkaterMovementComponent->MaxAcceleration = SkaterMovementComponent->GetAccelerationForce();
+        SkaterMovementComponent->SetBraking(false);
     }
 }
 
