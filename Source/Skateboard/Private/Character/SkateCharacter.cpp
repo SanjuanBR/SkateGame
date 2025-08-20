@@ -13,6 +13,7 @@
 #include "Data/ScoreDataAsset.h"
 #include "Debug/DebugHelper.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Player/SkatePlayerState.h"
 
 
 ASkateCharacter::ASkateCharacter(const FObjectInitializer& ObjectInitializer)
@@ -197,6 +198,9 @@ void ASkateCharacter::ScoreJump()
 
     if (TotalScoreForThisJump > 0)
     {
-        Debug::Print("PONTUAÇÃO TOTAL DO PULO: " + FString::FromInt(TotalScoreForThisJump));
+        if (ASkatePlayerState* SkatePS = GetPlayerState<ASkatePlayerState>())
+        {
+            SkatePS->AddScore(TotalScoreForThisJump);
+        }
     }
 }

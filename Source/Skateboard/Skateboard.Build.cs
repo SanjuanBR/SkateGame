@@ -16,7 +16,8 @@ public class Skateboard : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"CustomEditor",
-			"GameplayTags"
+			"GameplayTags",
+			"UMG"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

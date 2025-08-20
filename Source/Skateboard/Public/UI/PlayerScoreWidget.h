@@ -6,11 +6,19 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerScoreWidget.generated.h"
 
-/**
- * 
- */
+class UTextBlock;
+
 UCLASS()
 class SKATEBOARD_API UPlayerScoreWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void NativeConstruct() override;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ScoreText;
+
+	UFUNCTION()
+	void HandleScoreUpdated(int32 NewTotalScore, int32 ScoreDelta);
 };
