@@ -51,32 +51,28 @@ void USkateMovementComponent::TickComponent(float DeltaTime, enum ELevelTick Tic
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!PawnOwner || !UpdatedComponent || IsFalling()){return;}
+	if (!PawnOwner || !UpdatedComponent) { return; }
 
-	const FVector SkateAcceleration = PawnOwner->GetActorForwardVector() * AccelerationForce * ForwardInputScale;
-
-	const FVector CurrentVelocity = Velocity;
-	const float DecelerationRate = bIsBraking ? BrakingForce : SkateGroundFriction;
-	const FVector Deceleration = -CurrentVelocity.GetSafeNormal() * DecelerationRate;
-	
-	if (ForwardInputScale <= KINDA_SMALL_NUMBER)
+	if (IsFalling())
 	{
-		Velocity += Deceleration * DeltaTime;
+		return;
+	}
+
+	float CurrentSpeed = Velocity.Size();
+
+	if (ForwardInputScale > KINDA_SMALL_NUMBER)
+	{
+		CurrentSpeed += AccelerationForce * ForwardInputScale * DeltaTime;
 	}
 	else
 	{
-		Velocity += SkateAcceleration * DeltaTime;
+		const float DecelerationRate = bIsBraking ? BrakingForce : SkateGroundFriction;
+		CurrentSpeed -= DecelerationRate * DeltaTime;
 	}
 
-	if (Velocity.SizeSquared() > FMath::Square(MaxSkateSpeed))
-	{
-		Velocity = Velocity.GetSafeNormal() * MaxSkateSpeed;
-	}
-	
-	if (FVector::DotProduct(Velocity, CurrentVelocity) < 0.f)
-	{
-		Velocity = FVector::ZeroVector;
-	}
-	
+	CurrentSpeed = FMath::Clamp(CurrentSpeed, 0.0f, MaxSkateSpeed);
+
+	Velocity = PawnOwner->GetActorForwardVector() * CurrentSpeed;
+
 	ForwardInputScale = 0.0f;
 }

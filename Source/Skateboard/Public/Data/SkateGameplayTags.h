@@ -1,0 +1,11 @@
+﻿#pragma once
+
+#include "NativeGameplayTags.h"
+
+namespace SkateTags
+{
+	SKATEBOARD_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Obstacle_Car);
+	SKATEBOARD_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Obstacle_Pole);
+	SKATEBOARD_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Obstacle_TrashBin);
+	SKATEBOARD_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Obstacle_ParkBench);
+}

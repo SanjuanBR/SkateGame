@@ -8,7 +8,11 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Components/ObstacleComponent.h"
 #include "Components/Movement/SkateMovementComponent.h"
+#include "Data/ScoreDataAsset.h"
+#include "Debug/DebugHelper.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 
 ASkateCharacter::ASkateCharacter(const FObjectInitializer& ObjectInitializer)
@@ -107,6 +111,8 @@ void ASkateCharacter::StopBraking(const FInputActionValue& Value)
 void ASkateCharacter::StartJumpCharge(const FInputActionValue& Value)
 {
     JumpChargeStartTime = GetWorld()->GetTimeSeconds();
+
+    JumpStartLocation = GetActorLocation();
 }
 
 void ASkateCharacter::ReleaseJump(const FInputActionValue& Value)
@@ -115,5 +121,82 @@ void ASkateCharacter::ReleaseJump(const FInputActionValue& Value)
     {
         const float ChargeDuration = GetWorld()->GetTimeSeconds() - JumpChargeStartTime;
         SkaterMovementComponent->DoChargedJump(ChargeDuration);
+    }
+}
+
+void ASkateCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+    Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+
+    // UEnum* EnumRef = FindObject<UEnum>(ANY_PACKAGE, TEXT("EMovementMode"), true);
+    // FString StringStatus = EnumRef->GetNameStringByValue((int64)PrevMovementMode);
+    //
+    // Debug::Print("PrevMovementMode: " + StringStatus);
+    
+    if (PrevMovementMode == MOVE_Falling && GetCharacterMovement()->IsMovingOnGround())
+    {
+        ScoreJump();
+        ScoredObstaclesInCombo.Empty();
+    }
+}
+
+void ASkateCharacter::ScoreJump()
+{
+    if (!ScoreData)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ScoreData asset não foi definido no SkateCharacter."));
+        return;
+    }
+
+    const FVector JumpEndLocation = GetActorLocation();
+    const FRotator Orientation = GetActorRotation();
+    
+    TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldDynamic));
+    ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+    
+    TArray<AActor*> ActorsToIgnore;
+    ActorsToIgnore.Add(this);
+
+    TArray<FHitResult> HitResults;
+
+    // Executa o Box Trace do início ao fim do pulo
+    UKismetSystemLibrary::BoxTraceMultiForObjects(
+        GetWorld(),
+        JumpStartLocation,
+        JumpEndLocation,
+        JumpDetectionBoxHalfSize,
+        Orientation,
+        ObjectTypes,
+        false,
+        ActorsToIgnore,
+        EDrawDebugTrace::ForDuration,
+        HitResults,
+        true
+    );
+
+    int32 TotalScoreForThisJump = 0;
+
+    for (const FHitResult& Hit : HitResults)
+    {
+        AActor* HitActor = Hit.GetActor();
+        if (HitActor && !ScoredObstaclesInCombo.Contains(HitActor))
+        {
+            UObstacleComponent* ObstacleComp = HitActor->FindComponentByClass<UObstacleComponent>();
+            if (ObstacleComp)
+            {
+                if (const int32* ScorePtr = ScoreData->ScoreMap.Find(ObstacleComp->ObstacleTag))
+                {
+                    TotalScoreForThisJump += *ScorePtr;
+                    ScoredObstaclesInCombo.Add(HitActor);
+                }
+            }
+        }
+    }
+
+    if (TotalScoreForThisJump > 0)
+    {
+        Debug::Print("PONTUAÇÃO TOTAL DO PULO: " + FString::FromInt(TotalScoreForThisJump));
     }
 }

@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "SkateCharacter.generated.h"
 
+class UScoreDataAsset;
 class USkateMovementComponent;
 class UInputMappingContext;
 class USpringArmComponent;
@@ -37,24 +38,35 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 	
-	UPROPERTY(EditAnywhere, Category = "Setup|Input")
+	UPROPERTY(EditAnywhere, Category = "Setup|Input" , meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* SkaterMappingContext;
 
-	UPROPERTY(EditAnywhere, Category = "Setup|Input")
+	UPROPERTY(EditAnywhere, Category = "Setup|Input" , meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveForwardAction;
 
-	UPROPERTY(EditAnywhere, Category = "Setup|Input")
+	UPROPERTY(EditAnywhere, Category = "Setup|Input" , meta = (AllowPrivateAccess = "true"))
 	UInputAction* TurnAction;
 
-	UPROPERTY(EditAnywhere, Category = "Setup|Input")
+	UPROPERTY(EditAnywhere, Category = "Setup|Input" , meta = (AllowPrivateAccess = "true"))
 	UInputAction* BrakeAction;
 
-	UPROPERTY(EditAnywhere, Category = "Setup|Input")
+	UPROPERTY(EditAnywhere, Category = "Setup|Input", meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
-	
+
+	UPROPERTY(EditAnywhere, Category = "Setup|Input", meta = (AllowPrivateAccess = "true"))
+	FVector JumpDetectionBoxHalfSize = FVector(30.f, 30.f, 60.f);
+
+	UPROPERTY()
 	USkateMovementComponent* SkaterMovementComponent;
 
+	UPROPERTY()
+	TSet<AActor*> ScoredObstaclesInCombo;
+
+	UPROPERTY(EditAnywhere, Category = "Setup|Scoring")
+	UScoreDataAsset* ScoreData;
+
 	float JumpChargeStartTime;
+	FVector JumpStartLocation;
 	
 	void MoveForward(const FInputActionValue& Value);
 	void Turn(const FInputActionValue& Value);
@@ -62,4 +74,9 @@ private:
 	void StopBraking(const FInputActionValue& Value);
 	void StartJumpCharge(const FInputActionValue& Value);
 	void ReleaseJump(const FInputActionValue& Value);
+
+	void ScoreJump();
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
+	
+	
 };
